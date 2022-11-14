@@ -21,7 +21,7 @@ https://medium.com/xp-inc/dica-r%C3%A1pida-kafka-cdc-sql-server-docker-dfaff87a3
 
 	  sqlserver:
 	    container_name: "sqlserver.local"  
-	    image: mcr.microsoft.com/mssql/server:2019-latest
+	    image: 'mcr.microsoft.com/mssql/server:2019-latest'
 	    ports:
 	      - 1433:1433
 	    environment: 
