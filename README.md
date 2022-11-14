@@ -13,14 +13,75 @@ https://medium.com/xp-inc/dica-r%C3%A1pida-kafka-cdc-sql-server-docker-dfaff87a3
                -d 'mcr.microsoft.com/mssql/server:2019-latest'
     ```
 
-2) Criação do banco e tabelas
+1) Criar infra com docker compose
+	```PowerShell
+	version: '3.1'
+
+	services:
+
+	  sqlserver:
+	    container_name: "sqlserver.local"  
+	    image: mcr.microsoft.com/mssql/server:2019-latest
+	    ports:
+	      - 1433:1433
+	    environment: 
+	      MSSQL_AGENT_ENABLED: "true"
+	      MSSQL_PID: Standard
+	      SA_PASSWORD: P@ssw0rd!
+	      ACCEPT_EULA: "Y"
+	      
+	  zookeeper:
+	    container_name: zookeeper.local
+	    image: confluentinc/cp-zookeeper:latest
+	    ports:
+	      - "2181:2181"
+	    environment:
+	      ZOOKEEPER_CLIENT_PORT: 2181
+
+	  kafka:
+	    container_name: kafka.local
+	    image: confluentinc/cp-kafka:latest
+	    depends_on:
+	      - zookeeper
+	      #- mysql
+	      - sqlserver
+	    ports:
+	      - "9093:9093"
+	    environment:
+	      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+	      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
+	      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+	      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+	      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+	      KAFKA_LOG_CLEANER_DELETE_RETENTION_MS: 5000
+	      KAFKA_BROKER_ID: 1
+	      KAFKA_MIN_INSYNC_REPLICAS: 1
+
+	  connector:
+	    container_name: debezium.local
+	    image: debezium/connect:0.10
+	    ports:
+	      - "8083:8083"
+	    environment:
+	      GROUP_ID: 1
+	      CONFIG_STORAGE_TOPIC: my_connect_configs
+	      OFFSET_STORAGE_TOPIC: my_connect_offsets
+	      BOOTSTRAP_SERVERS: kafka:9092
+	    depends_on:
+	      - zookeeper
+	      #- mysql
+	      - sqlserver
+	      - kafka
+	```
+
+3) Criação do banco e tabelas
 
     ```SQL
     -- 1- Criação do database
-    create database db;
+    create database dbstore;
     GO
 
-    use db;
+    use dbstore;
     GO
 
     create table products 
